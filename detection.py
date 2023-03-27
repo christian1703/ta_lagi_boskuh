@@ -1,4 +1,4 @@
-# ddetection.py
+# detection.py
 
 import logging
 import sqlite3
@@ -52,7 +52,7 @@ def insert_log(pkt):
     logging.info(f"{timestamp} - {source_mac} - {source_ip} - {protocol} - {payload}")
 
     # Check for sniffing
-    c.execute("SELECT source_mac, source_ip FROM log WHERE protocol=? AND timestamp > datetime('now', '-10 seconds')", (protocol,))
+    c.execute("SELECT source_mac, source_ip FROM log WHERE protocol=? AND timestamp > datetime('now', '-1 seconds')", (protocol, payload))
     logs = c.fetchall()
     if len(logs) > 1:
         for log in logs[:-1]:
