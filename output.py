@@ -1,4 +1,4 @@
-#outputt.py
+#ooutputt.py
 
 import sqlite3
 import threading

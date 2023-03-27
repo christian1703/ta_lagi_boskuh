@@ -1,4 +1,4 @@
-# detection.py
+# ddetection.py
 
 import logging
 import sqlite3
@@ -6,7 +6,7 @@ from datetime import datetime
 from scapy.all import *
 
 # Set up logging configuration
-logging.basicConfig(filename='logs.log', level=logging.DEBUG)
+logging.basicConfig(filename='logs.log',level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Connect to database
 conn = sqlite3.connect('log.db')
@@ -22,7 +22,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS log (
                 payload TEXT
             )''')
 conn.commit()
-# Define a function to insert log into database
+
+# Define a function to insert log into database and log to console
 def insert_log(pkt):
     if IP not in pkt:
         return
@@ -47,6 +48,9 @@ def insert_log(pkt):
     c.execute("INSERT INTO log (timestamp, source_mac, source_ip, protocol, payload) VALUES (?, ?, ?, ?, ?)", (timestamp, source_mac, source_ip, protocol, payload))
     conn.commit()
 
+    # Log packet information to console
+    logging.info(f"{timestamp} - {source_mac} - {source_ip} - {protocol} - {payload}")
+
     # Check for sniffing
     c.execute("SELECT source_mac, source_ip FROM log WHERE protocol=? AND timestamp > datetime('now', '-10 seconds')", (protocol,))
     logs = c.fetchall()
@@ -55,5 +59,6 @@ def insert_log(pkt):
             if log[0] != source_mac or log[1] != source_ip:
                 logging.warning("%s Sniffing detected from : %s (%s)", timestamp, source_mac, source_ip)
                 break
+
 #Start capturing packets and analyzing them 
 sniff(filter="icmp or udp port 53 or arp", prn=insert_log)
