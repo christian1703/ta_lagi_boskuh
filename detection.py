@@ -28,6 +28,14 @@ def insert_log(pkt):
     if IP not in pkt:
         return
 
+    # Check for Wireshark
+    if 'wireshark' in pkt.summary().lower():
+        timestamp = str(datetime.now())
+        source_mac = pkt[Ether].src
+        source_ip = pkt[IP].src
+        logging.warning("%s Wireshark detected from: %s (%s)", timestamp, source_mac, source_ip)
+        return
+
     if pkt.haslayer(ICMP) and pkt[ICMP].type == 8:
         protocol = 'Ping'
         payload = f"Source:{pkt[Ether].src} ({pkt[IP].src})"
@@ -52,7 +60,7 @@ def insert_log(pkt):
     logging.info(f"{timestamp} - {source_mac} - {source_ip} - {protocol} - {payload}")
 
     # Check for sniffing
-    c.execute("SELECT source_mac, source_ip FROM log WHERE protocol=? AND timestamp > datetime('now', '-1 seconds')", (protocol, payload))
+    c.execute("SELECT source_mac, source_ip FROM log WHERE protocol=? AND timestamp > datetime('now', '-1 seconds')", (protocol,))
     logs = c.fetchall()
     if len(logs) > 1:
         for log in logs[:-1]:
@@ -60,5 +68,9 @@ def insert_log(pkt):
                 logging.warning("%s Sniffing detected from : %s (%s)", timestamp, source_mac, source_ip)
                 break
 
+
 #Start capturing packets and analyzing them 
 sniff(filter="icmp or udp port 53 or arp", prn=insert_log)
+
+#close database connection
+conn.close()
